@@ -1,6 +1,6 @@
 """
 File name: DA.py
-Discription: The code are for running one replicate of Scenario 1, 2, or 3 in the paper using ProbitDA or LogitDA. Command-line arguments are needed.
+Discription: The code is for running one replicate of Scenario 1, 2, or 3 in the paper using ProbitDA or LogitDA. Command-line arguments are needed.
 """
 
 import numpy as np
@@ -39,7 +39,7 @@ seed = lp*100 # random seed
 # Utils
 def stable_multivariate_normal(mu, Sigma):
     """
-    Generate multivariate normal variable given mean and covariance matrix
+    Generate multivariate normal variables given mean and covariance matrix
     """
     u_,d_,ut_ = scipy.linalg.svd(Sigma,lapack_driver='gesvd')
     sigma_sqrt=np.matmul(u_,np.diag(np.sqrt(d_)))
@@ -47,7 +47,7 @@ def stable_multivariate_normal(mu, Sigma):
 
 def find_a(X, target_ib, left=-10, right=150):
     """
-    Tune the intercept a to reach the target imbalance factor
+    Tune the intercept a to reach the target imbalance level
     """
     global link
     n = X.shape[0]
@@ -99,7 +99,7 @@ for nd_i in range(20):
     n = n_list[nd_i]
     d = d_list[nd_i]
     
-    # Make output directory, skip if there is already result in the target directory
+    # Make the output directory, skip if there is already result in the target directory
     output_path = path + link + '/ib_' + str(target_ib) + '/n_' + str(n) + '/d_' + str(d) + '/'
     if not os.path.exists(output_path):
         os.makedirs(output_path)

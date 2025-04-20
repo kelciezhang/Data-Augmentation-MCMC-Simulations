@@ -1,6 +1,6 @@
 """
 File name: LassoDA.py
-Discription: The code are for running one replicate of Scenario 1, 2, or 3 in the paper using LassoDA. Command-line arguments are needed.
+Discription: The code is for running one replicate of Scenario 1, 2, or 3 in the paper using LassoDA. Command-line arguments are needed.
 """
 import pandas as pd
 import numpy as np
@@ -69,7 +69,7 @@ for nd_i in range(20):
     n = n_list[nd_i]
     d = d_list[nd_i]
     
-    # Make output directory
+    # Make the output directory
     output_path = path + 'lasso_result' + '/n_' + str(n) + '/d_' + str(d) + '/'
     if not os.path.exists(output_path):
         os.makedirs(output_path)
