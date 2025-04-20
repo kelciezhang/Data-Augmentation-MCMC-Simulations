@@ -7,7 +7,7 @@ import sys
 from scipy.stats import invgauss, invgamma
 import scipy
 
-path=os.getcwd()
+path=os.getcwd() + '/'
 
 # Parameters
 setting=sys.argv[1] # scenario info: "joint", "ngrow", or "dgrow", correspoding to scenario 1, 2, or 3 in the paper respectively
