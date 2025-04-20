@@ -8,7 +8,7 @@ from scipy.optimize import bisect
 from scipy.stats import truncnorm, norm
 import scipy
 
-path=os.getcwd()
+path=os.getcwd() + '/'
 
 # Parameters
 link=sys.argv[1] # link function: "logit" or "probit"
