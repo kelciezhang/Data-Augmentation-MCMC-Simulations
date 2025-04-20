@@ -1,3 +1,8 @@
+"""
+File name: DA.py
+Discription: The code are for running one replicate of Scenario 1, 2, or 3 in the paper using ProbitDA or LogitDA. Command-line arguments are needed.
+"""
+
 import numpy as np
 from polyagamma import random_polyagamma
 from numpy.linalg import inv
@@ -14,9 +19,7 @@ path=os.getcwd() + '/'
 link=sys.argv[1] # link function: "logit" or "probit"
 setting=sys.argv[2] # scenario info: "joint", "ngrow", or "dgrow", correspoding to scenario 1, 2, or 3 in the paper respectively
 target_ib=int(sys.argv[3]) # imbalance factor * 100
-lp=int(sys.argv[4]) # # replicate number, recall we want to perform the sampling 100 times and get average autocorrelation time
-
-
+lp=int(sys.argv[4]) # # replicate number: 1-100 
 
 if setting=='joint':
     n_list = list(range(50,1001,50))
@@ -29,17 +32,23 @@ elif setting=='dgrow':
     d_list = list(range(50,1001,50))
 else:
     raise "Unknown Setting"
-
+    
 maxit = 50000 # maximum iteration
 seed = lp*100 # random seed 
 
 # Utils
 def stable_multivariate_normal(mu, Sigma):
+    """
+    Generate multivariate normal variable given mean and covariance matrix
+    """
     u_,d_,ut_ = scipy.linalg.svd(Sigma,lapack_driver='gesvd')
     sigma_sqrt=np.matmul(u_,np.diag(np.sqrt(d_)))
     return np.matmul(sigma_sqrt,np.random.randn(d))+mu
 
 def find_a(X, target_ib, left=-10, right=150):
+    """
+    Tune the intercept a to reach the target imbalance factor
+    """
     global link
     n = X.shape[0]
     def test(a):
@@ -63,6 +72,9 @@ def find_a(X, target_ib, left=-10, right=150):
                 return a  
             
 def kernel_DAlogit(theta):
+    """
+    One iteration of LogitDA 
+    """
     global B, b, d, n, X, Y
     omega = random_polyagamma(z=X.dot(theta), random_state=seed)
     Sigma = inv(np.matmul(np.matmul(X.T,np.diag(omega)),X) + inv(B))
@@ -70,6 +82,9 @@ def kernel_DAlogit(theta):
     return stable_multivariate_normal(mu, Sigma)
 
 def kernel_DAprobit(theta):
+    """
+    One iteration of ProbitDA 
+    """
     global B, b, d, n, X, Y
     h = np.matmul(X,theta)
     z = np.zeros(n)
@@ -83,8 +98,8 @@ def kernel_DAprobit(theta):
 for nd_i in range(20):
     n = n_list[nd_i]
     d = d_list[nd_i]
-    b = np.zeros(d) # prior mean
-    B = np.eye(d) # prior variance
+    
+    # Make output directory, skip if there is already result in the target directory
     output_path = path + link + '/ib_' + str(target_ib) + '/n_' + str(n) + '/d_' + str(d) + '/'
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -92,14 +107,17 @@ for nd_i in range(20):
     result_file = 'tauto_'+link+'_ib' + str(target_ib) + '_n' + str(n) + '_d' + str(d)+'_'+str(lp)+'.npy'
     if os.path.exists(output_path + result_file):
         continue
+        
+    # Generate data
+    b = np.zeros(d) # prior mean
+    B = np.eye(d) # prior variance
 
     np.random.seed(seed)
-    X = np.concatenate((np.ones(n).reshape(n,1),np.random.multivariate_normal(np.zeros(d-1),np.eye(d-1),n)),axis=1)
-         
+    X = np.concatenate((np.ones(n).reshape(n,1),np.random.multivariate_normal(np.zeros(d-1),np.eye(d-1),n)),axis=1) 
     a = find_a(X,target_ib) #imbalance
-    # Generate data and coefficients
+    
     np.random.seed(seed)
-    theta_m = np.concatenate((np.array([a]),np.zeros(d-1))) #mean of theta truth
+    theta_m = np.concatenate((np.array([a]),np.zeros(d-1))) # mean of theta truth
     theta_v = np.diag(np.concatenate(([0],np.ones(d-1)))) # variance of theta truth 
     theta = np.random.multivariate_normal(theta_m, theta_v)
     if link=='probit':
@@ -115,7 +133,7 @@ for nd_i in range(20):
     m = np.min(B_eigen)
     kappa = L/m
 
-
+    # Sampling
     np.random.seed(seed)   
     trace = np.zeros((maxit+1, d))
     theta0 = np.concatenate((np.array([a]), np.zeros(d-1)))
@@ -129,7 +147,7 @@ for nd_i in range(20):
             raise('Error!')
         trace[i,:] = theta0
 
-
+    # Calculate autocorrelation time
     burnin = 25000
     corr_list = []
     for lag in range(1,20000):
@@ -138,7 +156,7 @@ for nd_i in range(20):
     t_auto=1+2*np.sum(pd.Series(corr_list).iloc[0:t-1])
 
 
-
+    # Save the result
     result= {'n': n,\
              'd': d,\
              'a': a,\
@@ -146,6 +164,5 @@ for nd_i in range(20):
              'ib': np.sum(Y)/n,\
              't_auto': t_auto
     }
-
     np.save(output_path+result_file, result)
 
